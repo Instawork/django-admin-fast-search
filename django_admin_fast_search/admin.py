@@ -8,9 +8,14 @@ class FastSearch(admin.ModelAdmin):
 
     show_full_result_count = False
     change_list_template = "admin/custom_change_list.html"
+    # Fields that will do a SQL LIKE query
     search_fields_contains = ()
+
+    # Fields that will do an exact match (potentially using an index)
+    search_fields_exact = ()
+
+    # Fields that will do a SQL MATCH query using a fulltext index (MySQL only)
     search_fields_fulltext_index = ()
-    search_fields_fulltext_exact = ()
 
     def lookup_allowed(self, lookup, value):
         return True
