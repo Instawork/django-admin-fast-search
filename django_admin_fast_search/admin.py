@@ -8,6 +8,9 @@ class FastSearch(admin.ModelAdmin):
 
     show_full_result_count = False
     change_list_template = "admin/custom_change_list.html"
+    search_fields_contains = ()
+    search_fields_fulltext_index = ()
+    search_fields_fulltext_exact = ()
 
     def lookup_allowed(self, lookup, value):
         return True
@@ -18,7 +21,12 @@ class FastSearch(admin.ModelAdmin):
         new_filters = ()
 
         for field in self.search_fields:
-            filter_class = generic_filter_factory()
+            if field in self.search_fields_contains:
+                filter_class = generic_filter_factory("contains")
+            elif field in self.search_fields_fulltext_index:
+                filter_class = generic_filter_factory("search")
+            else:
+                filter_class = generic_filter_factory("exact")
             filter_class.title = field.replace("__", "→").replace("_", " ").upper()
             filter_class.parameter_name = field
 
@@ -27,11 +35,11 @@ class FastSearch(admin.ModelAdmin):
         return new_filters + initial_list_filters
 
 
-def generic_filter_factory():
+def generic_filter_factory(filter_type):
     """
     Factory to generate GenericFilter classes. This helps us generate multiple independent copies of this class
     """
-    class GenericFilter(admin.SimpleListFilter):
+    class GenericExactFilter(admin.SimpleListFilter):
         title = None
         parameter_name = None
 
@@ -48,4 +56,45 @@ def generic_filter_factory():
                 return queryset.filter(**kwargs)
             return queryset
 
-    return GenericFilter
+    class GenericContainsFilter(admin.SimpleListFilter):
+        title = None
+        parameter_name = None
+
+        template = "admin/custom_search_field.html"
+
+
+        def lookups(self, request, model_admin):
+            return (self.parameter_name, self.parameter_name),
+
+        def queryset(self, request, queryset):
+            print(self.value())
+
+            if self.value():
+                kwargs = {"{}__icontains".format(self.parameter_name): self.value()}
+                return queryset.filter(**kwargs)
+            return queryset
+
+    class GenericSearchFilter(admin.SimpleListFilter):
+        title = None
+        parameter_name = None
+
+        template = "admin/custom_search_field.html"
+
+
+        def lookups(self, request, model_admin):
+            return (self.parameter_name, self.parameter_name),
+
+        def queryset(self, request, queryset):
+            print(self.value())
+
+            if self.value():
+                kwargs = {"{}__search".format(self.parameter_name): f"*{self.value()}*"}
+                return queryset.filter(**kwargs)
+            return queryset
+
+    if filter_type == "contains":
+        return GenericContainsFilter
+    elif filter_type == "search":
+        return GenericSearchFilter
+    else:
+        return GenericExactFilter
