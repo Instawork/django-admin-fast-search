@@ -2,7 +2,7 @@
 version: 2.1
 jobs:
   unittests-python36:
-    resource_class: xlarge
+    resource_class: small
     working_directory: ~/django-admin-fast-search
     docker:
       - image: circleci/python:3.6
@@ -15,7 +15,7 @@ jobs:
           name: Run tests on Python 3.6
           command: tox -e py36-django-22,py36-django-30,py36-django-31,py36-django-32
   unittests-python37:
-    resource_class: xlarge
+    resource_class: small
     working_directory: ~/django-admin-fast-search
     docker:
       - image: circleci/python:3.7
@@ -28,7 +28,7 @@ jobs:
           name: Run tests on Python 3.7
           command: tox -e py37-django-22,py37-django-30,py37-django-31,py37-django-32
   unittests-python38:
-    resource_class: xlarge
+    resource_class: small
     working_directory: ~/django-admin-fast-search
     docker:
       - image: circleci/python:3.8
