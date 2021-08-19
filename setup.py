@@ -43,7 +43,7 @@ if sys.argv[-1] == 'tag':
 
 readme = open('README.rst').read()
 history = open('HISTORY.rst').read().replace('.. :changelog:', '')
-requirements = open('requirements.txt').readlines()
+requirements = open('./requirements.txt').readlines()
 
 setup(
     name='django-admin-fast-search',
