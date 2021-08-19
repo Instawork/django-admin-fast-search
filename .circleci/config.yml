@@ -1,0 +1,15 @@
+---
+version: 2.1
+jobs:
+  unittests:
+    resource_class: xlarge
+    working_directory: ~/instawork
+    docker:
+      - image: circleci/python:3.6
+    steps:
+      - run:
+          name: Install dependencies
+          command: pip install requirements_test.txt
+      - run:
+          - name: Run tests
+          - tox
