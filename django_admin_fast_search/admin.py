@@ -27,16 +27,15 @@ class FastSearch(admin.ModelAdmin):
 
         for field in self.search_fields:
             if field in self.search_fields_contains:
-                filter_class = generic_filter_factory("contains")
+                filter_class = generic_filter_factory(filter_type="contains")
             elif field in self.search_fields_fulltext_index:
-                filter_class = generic_filter_factory("search")
+                filter_class = generic_filter_factory(filter_type="search")
             else:
-                filter_class = generic_filter_factory("exact")
+                filter_class = generic_filter_factory(filter_type="exact")
             filter_class.title = field.replace("__", "→").replace("_", " ").upper()
             filter_class.parameter_name = field
 
             new_filters += (filter_class,)
-
         return new_filters + initial_list_filters
 
 
@@ -54,8 +53,6 @@ def generic_filter_factory(filter_type):
             return (self.parameter_name, self.parameter_name),
 
         def queryset(self, request, queryset):
-            print(self.value())
-
             if self.value():
                 kwargs = {"{}".format(self.parameter_name): self.value()}
                 return queryset.filter(**kwargs)
@@ -72,8 +69,6 @@ def generic_filter_factory(filter_type):
             return (self.parameter_name, self.parameter_name),
 
         def queryset(self, request, queryset):
-            print(self.value())
-
             if self.value():
                 kwargs = {"{}__icontains".format(self.parameter_name): self.value()}
                 return queryset.filter(**kwargs)
@@ -90,8 +85,6 @@ def generic_filter_factory(filter_type):
             return (self.parameter_name, self.parameter_name),
 
         def queryset(self, request, queryset):
-            print(self.value())
-
             if self.value():
                 kwargs = {"{}__search".format(self.parameter_name): f"*{self.value()}*"}
                 return queryset.filter(**kwargs)
