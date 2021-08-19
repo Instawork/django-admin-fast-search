@@ -9,7 +9,7 @@ jobs:
     steps:
       - run:
           name: Install dependencies
-          command: pip install requirements_test.txt
+          command: pip install -r requirements_test.txt
       - run:
           name: Run tests
           command: tox
