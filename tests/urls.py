@@ -6,5 +6,5 @@ from django.contrib import admin
 
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
-    url(r'^', include('django_admin_fast_search.urls', namespace='django_admin_fast_search')),
+    # url(r'^', include('django_admin_fast_search.urls', namespace='django_admin_fast_search')),
 ]
