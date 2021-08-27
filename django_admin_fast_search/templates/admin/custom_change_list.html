@@ -2,6 +2,8 @@
 {% load i18n %}
 {% load admin_list %}
 
+{% block search %}{% endblock %}
+
 {% block filters %}
   {% if cl.has_filters %}
     <div id="changelist-filter">
