@@ -43,6 +43,7 @@ def generic_filter_factory(filter_type):
     """
     Factory to generate GenericFilter classes. This helps us generate multiple independent copies of this class
     """
+
     class GenericExactFilter(admin.SimpleListFilter):
         title = None
         parameter_name = None
@@ -64,7 +65,6 @@ def generic_filter_factory(filter_type):
 
         template = "admin/custom_search_field.html"
 
-
         def lookups(self, request, model_admin):
             return (self.parameter_name, self.parameter_name),
 
@@ -80,13 +80,14 @@ def generic_filter_factory(filter_type):
 
         template = "admin/custom_search_field.html"
 
-
         def lookups(self, request, model_admin):
             return (self.parameter_name, self.parameter_name),
 
         def queryset(self, request, queryset):
             if self.value():
-                kwargs = {"{}__search".format(self.parameter_name): f"*{self.value()}*"}
+                terms = self.value().strip().split(" ")
+                query = " ".join(["+" + term for term in terms])
+                kwargs = {f"{self.parameter_name}__search": f"{query}"}
                 return queryset.filter(**kwargs)
             return queryset
 
