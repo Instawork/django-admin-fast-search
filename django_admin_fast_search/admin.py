@@ -86,7 +86,7 @@ def generic_filter_factory(filter_type):
         def queryset(self, request, queryset):
             if self.value():
                 terms = self.value().strip().split(" ")
-                query = " ".join(["+" + term for term in terms])
+                query = " ".join(["+" + term for term in terms if term.isalnum()])
                 kwargs = {f"{self.parameter_name}__search": f"{query}"}
                 return queryset.filter(**kwargs)
             return queryset
