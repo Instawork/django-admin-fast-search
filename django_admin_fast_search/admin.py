@@ -85,9 +85,10 @@ def generic_filter_factory(filter_type):
 
         def queryset(self, request, queryset):
             if self.value():
-                terms = self.value().strip().split(" ")
-                query = " ".join(["+" + term for term in terms if term])
-                kwargs = {f"{self.parameter_name}__search": f"{query}"}
+                # wrap the query argument in "" (double quotes),
+                # else words with spaces in between will be considered as 'A OR B' instead of 'A B'
+                query_arg = f'"{self.value().strip()}"'
+                kwargs = {f"{self.parameter_name}__search": f"{query_arg}"}
                 return queryset.filter(**kwargs)
             return queryset
 
