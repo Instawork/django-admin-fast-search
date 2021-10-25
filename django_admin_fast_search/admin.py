@@ -3,6 +3,7 @@
 from django.contrib import admin
 from django.db.models import Q
 
+import re
 
 class FastSearch(admin.ModelAdmin):
 
@@ -85,10 +86,17 @@ def generic_filter_factory(filter_type):
 
         def queryset(self, request, queryset):
             if self.value():
+
+                # remove operators with special meaning in boolean search mode.
+                # Operators are: +, -, > <, ( ), ~, *, ", @distance
+                # refer https://stackoverflow.com/a/26537463
+
+                search_value = re.sub(r'[+\-><\(\)~*\"@]+', ' ', self.value())
+
                 # wrap the query argument in "" (double quotes),
                 # else words with spaces in between will be considered as 'A OR B' instead of 'A B'
-                query_arg = f'"{self.value().strip()}"'
-                kwargs = {f"{self.parameter_name}__search": f"{query_arg}"}
+                query_arg = f'"{search_value.strip()}"'
+                kwargs = {f"{self.parameter_name}__search": search_value}
                 return queryset.filter(**kwargs)
             return queryset
 
