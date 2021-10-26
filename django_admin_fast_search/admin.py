@@ -93,10 +93,9 @@ def generic_filter_factory(filter_type):
 
                 search_value = re.sub(r'[+\-><\(\)~*\"@]+', ' ', self.value())
 
-                # wrap the query argument in "" (double quotes),
-                # else words with spaces in between will be considered as 'A OR B' instead of 'A B'
-                query_arg = f'"{search_value.strip()}"'
-                kwargs = {f"{self.parameter_name}__search": search_value}
+                terms = search_value.strip().split(" ")
+                query = " ".join(["+" + term for term in terms if term])
+                kwargs = {f"{self.parameter_name}__search": f"{query}"}
                 return queryset.filter(**kwargs)
             return queryset
 
