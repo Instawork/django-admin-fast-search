@@ -59,13 +59,10 @@ jobs:
       - checkout  # checkout source code to working directory
       - run:
           name: Install dependencies
-          command: pip install -r requirements_dev.txt
+          command: pip install -r requirements_dev.txt -r requirements_test.txt
       - run:
           command: |  # create whl, install twine and publish to PyPI
-            python setup.py sdist bdist_wheel
-            sudo pip install pipenv
-            pipenv install twine
-            pipenv run twine upload dist/*
+            invoke testrelease
 
 workflows:
   version: 2
@@ -74,7 +71,8 @@ workflows:
       - unittests-python36
       - unittests-python37
       - unittests-python38
-      - test_pypi_publish
+      - test_pypi_publish:
+          context: Test-PyPi
       - pypi_publish:
           filters:
             branches:
