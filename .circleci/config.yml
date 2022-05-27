@@ -48,10 +48,10 @@ jobs:
       - checkout  # checkout source code to working directory
       - run:
           name: Install dependencies
-          command: pip install -r requirements_dev.txt
+          command: pip install -r requirements_dev.txt -r requirements_test.txt
       - run:
           command: |  # create whl, install twine and publish to Test PyPI
-            python invoke test_release
+            invoke test_release
   pypi_publish:
     docker:
       - image: cimg/python:3.10.4
