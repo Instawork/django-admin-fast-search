@@ -75,7 +75,7 @@ jobs:
           command: pip install -r requirements_dev.txt -r requirements_test.txt
       - run:
           command: |  # create whl, install twine and publish to PyPI
-            invoke testrelease
+            invoke release
 
 workflows:
   version: 2
