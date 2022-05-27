@@ -107,3 +107,23 @@ def release(c, bumpsize=''):
     c.run('git tag -a {version} -m "New version: {version}"'.format(version=django_admin_fast_search.__version__))
     c.run("git push --tags")
     c.run("git push origin master")
+
+
+@task(help={'bumpsize': 'Bump either for a "feature" or "breaking" change'})
+def test_release(c, bumpsize=''):
+    """
+    Package and upload a release to test pypi
+    """
+    clean(c)
+    if bumpsize:
+        bumpsize = '--' + bumpsize
+
+    c.run("bumpversion {bump} --no-input".format(bump=bumpsize))
+
+    import django_admin_fast_search
+    c.run("python setup.py sdist bdist_wheel")
+    c.run("twine upload --repository testpypi dist/*")
+
+    c.run('git tag -a {version} -m "New version: {version}"'.format(version=django_admin_fast_search.__version__))
+    c.run("git push --tags")
+    c.run("git push origin master")
