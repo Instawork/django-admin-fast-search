@@ -40,6 +40,19 @@ jobs:
       - run:
           name: Run tests on Python 3.9.13
           command: tox -e py39-django-22,py39-django-30,py39-django-31,py39-django-32
+  unittests-python3.10:
+    resource_class: small
+    working_directory: ~/django-admin-fast-search
+    docker:
+      - image: cimg/python:3.10.4
+    steps:
+      - checkout
+      - run:
+          name: Install dependencies
+          command: pip install -r requirements_test.txt
+      - run:
+          name: Run tests on Python 3.10.4
+          command: tox -e py3.10-django-22,py3.10-django-30,py3.10-django-31,py3.10-django-32
 
   test_pypi_publish:
     docker:
@@ -71,6 +84,7 @@ workflows:
       - unittests-python37
       - unittests-python38
       - unittests-python39
+      - unittests-python3.10
       - hold:
           type: approval
       - test_pypi_publish:
