@@ -41,6 +41,29 @@ jobs:
           name: Run tests on Python 3.8
           command: tox -e py38-django-22,py38-django-30,py38-django-31,py38-django-32
 
+  test_pypi_publish:
+    docker:
+      - image: circleci/python:3.6.4
+    steps:
+      - checkout  # checkout source code to working directory
+      - run:
+          command: |  # create whl, install twine and publish to Test PyPI
+            python setup.py sdist bdist_wheel
+            sudo pip install pipenv
+            pipenv install twine
+            pipenv run twine upload --repository testpypi dist/*
+  pypi_publish:
+    docker:
+      - image: circleci/python:3.6.4
+    steps:
+      - checkout  # checkout source code to working directory
+      - run:
+          command: |  # create whl, install twine and publish to PyPI
+            python setup.py sdist bdist_wheel
+            sudo pip install pipenv
+            pipenv install twine
+            pipenv run twine upload dist/*
+
 workflows:
   version: 2
   validate-pr:
@@ -48,3 +71,13 @@ workflows:
       - unittests-python36
       - unittests-python37
       - unittests-python38
+      - test_pypi_publish:
+          filters:
+            branches:
+              only:
+                - develop
+      - pypi_publish:
+          filters:
+            branches:
+              only:
+                - main
