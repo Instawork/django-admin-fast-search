@@ -71,11 +71,7 @@ workflows:
       - unittests-python36
       - unittests-python37
       - unittests-python38
-      - test_pypi_publish:
-          filters:
-            branches:
-              only:
-                - develop
+      - test_pypi_publish
       - pypi_publish:
           filters:
             branches:
