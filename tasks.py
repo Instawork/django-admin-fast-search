@@ -110,7 +110,7 @@ def release(c, bumpsize=''):
 
 
 @task
-def testrelease(c, username: str = '', password: str = ''):
+def testrelease(c):
     """
     Package and upload a release to test pypi
     """
