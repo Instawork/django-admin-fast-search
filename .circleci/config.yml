@@ -51,7 +51,7 @@ jobs:
           command: pip install -r requirements_dev.txt -r requirements_test.txt
       - run:
           command: |  # create whl, install twine and publish to Test PyPI
-            invoke test_release
+            invoke testrelease
   pypi_publish:
     docker:
       - image: cimg/python:3.10.4
