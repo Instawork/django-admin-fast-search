@@ -71,10 +71,17 @@ workflows:
       - unittests-python36
       - unittests-python37
       - unittests-python38
+      - hold:
+          type: approval
       - test_pypi_publish:
           context: Test-PyPi
+          requires:
+            - hold
       - pypi_publish:
+          context: PyPi
           filters:
             branches:
               only:
-                - main
+                - master
+            tags:
+              only: /.+/

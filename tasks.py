@@ -89,24 +89,16 @@ def lint(c):
     c.run("flake8 django-admin-fast-search tests")
 
 
-@task(help={'bumpsize': 'Bump either for a "feature" or "breaking" change'})
-def release(c, bumpsize=''):
+@task
+def release(c):
     """
     Package and upload a release
     """
     clean(c)
-    if bumpsize:
-        bumpsize = '--' + bumpsize
-
-    c.run("bumpversion {bump} --no-input".format(bump=bumpsize))
 
     import django_admin_fast_search
     c.run("python setup.py sdist bdist_wheel")
     c.run("twine upload dist/*")
-
-    c.run('git tag -a {version} -m "New version: {version}"'.format(version=django_admin_fast_search.__version__))
-    c.run("git push --tags")
-    c.run("git push origin master")
 
 
 @task
@@ -119,7 +111,3 @@ def testrelease(c):
     import django_admin_fast_search
     c.run("python setup.py sdist bdist_wheel")
     c.run("twine upload --repository testpypi dist/*")
-
-    c.run('git tag -a {version} -m "New version: {version}"'.format(version=django_admin_fast_search.__version__))
-    c.run("git push --tags")
-    c.run("git push origin master")
