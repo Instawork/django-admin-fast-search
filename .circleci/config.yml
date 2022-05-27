@@ -5,7 +5,7 @@ jobs:
     resource_class: small
     working_directory: ~/django-admin-fast-search
     docker:
-      - image: cimg/python:3.7.14
+      - image: cimg/python:3.7.13
     steps:
       - checkout
       - run:
