@@ -95,4 +95,4 @@ workflows:
           context: PyPi
           filters:
             tags:
-              only: /.+/
+              only: /.*/
