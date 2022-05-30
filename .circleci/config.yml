@@ -94,8 +94,8 @@ workflows:
       - pypi_publish:
           context: PyPi
           filters:
+            # ignore any commit on any branch by default
             branches:
-              only:
-                - master
+              ignore: /.*/
             tags:
-              only: /.+/
+              only: /.*/
