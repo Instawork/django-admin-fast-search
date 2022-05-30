@@ -94,8 +94,5 @@ workflows:
       - pypi_publish:
           context: PyPi
           filters:
-            branches:
-              only:
-                - master
             tags:
               only: /.+/
