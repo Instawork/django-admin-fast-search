@@ -1,50 +1,101 @@
 ---
 version: 2.1
 jobs:
-  unittests-python36:
-    resource_class: small
-    working_directory: ~/django-admin-fast-search
-    docker:
-      - image: circleci/python:3.6
-    steps:
-      - checkout
-      - run:
-          name: Install dependencies
-          command: pip install -r requirements_test.txt
-      - run:
-          name: Run tests on Python 3.6
-          command: tox -e py36-django-22,py36-django-30,py36-django-31,py36-django-32
   unittests-python37:
     resource_class: small
     working_directory: ~/django-admin-fast-search
     docker:
-      - image: circleci/python:3.7
+      - image: cimg/python:3.7.13
     steps:
       - checkout
       - run:
           name: Install dependencies
           command: pip install -r requirements_test.txt
       - run:
-          name: Run tests on Python 3.7
+          name: Run tests on Python 3.7.13
           command: tox -e py37-django-22,py37-django-30,py37-django-31,py37-django-32
   unittests-python38:
     resource_class: small
     working_directory: ~/django-admin-fast-search
     docker:
-      - image: circleci/python:3.8
+      - image: cimg/python:3.8.13
     steps:
       - checkout
       - run:
           name: Install dependencies
           command: pip install -r requirements_test.txt
       - run:
-          name: Run tests on Python 3.8
+          name: Run tests on Python 3.8.13
           command: tox -e py38-django-22,py38-django-30,py38-django-31,py38-django-32
+  unittests-python39:
+    resource_class: small
+    working_directory: ~/django-admin-fast-search
+    docker:
+      - image: cimg/python:3.9.13
+    steps:
+      - checkout
+      - run:
+          name: Install dependencies
+          command: pip install -r requirements_test.txt
+      - run:
+          name: Run tests on Python 3.9.13
+          command: tox -e py39-django-22,py39-django-30,py39-django-31,py39-django-32
+  unittests-python310:
+    resource_class: small
+    working_directory: ~/django-admin-fast-search
+    docker:
+      - image: cimg/python:3.10.4
+    steps:
+      - checkout
+      - run:
+          name: Install dependencies
+          command: pip install -r requirements_test.txt
+      - run:
+          name: Run tests on Python 3.10.4
+          command: tox -e py310-django-22,py310-django-30,py310-django-31,py310-django-32
+
+  test_pypi_publish:
+    docker:
+      - image: cimg/python:3.10.4
+    steps:
+      - checkout  # checkout source code to working directory
+      - run:
+          name: Install dependencies
+          command: pip install -r requirements_dev.txt -r requirements_test.txt
+      - run:
+          command: |  # create whl, install twine and publish to Test PyPI
+            invoke testrelease
+  pypi_publish:
+    docker:
+      - image: cimg/python:3.10.4
+    steps:
+      - checkout  # checkout source code to working directory
+      - run:
+          name: Install dependencies
+          command: pip install -r requirements_dev.txt -r requirements_test.txt
+      - run:
+          command: |  # create whl, install twine and publish to PyPI
+            invoke release
 
 workflows:
   version: 2
   validate-pr:
     jobs:
-      - unittests-python36
       - unittests-python37
       - unittests-python38
+      - unittests-python39
+      - unittests-python310
+      - hold:
+          type: approval
+      - test_pypi_publish:
+          context: Test-PyPi
+          requires:
+            - hold
+      - pypi_publish:
+          context: PyPi
+          filters:
+            branches:
+              only:
+                - master
+            tags:
+              only: /.+/
