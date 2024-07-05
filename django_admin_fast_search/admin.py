@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
+import logging
 
 from django.contrib import admin
-from django.db.models import Q
 
 import re
+
+logger = logging.getLogger("instawork.django_admin_fast_search.admin")
 
 class FastSearch(admin.ModelAdmin):
 
@@ -94,7 +96,9 @@ def generic_filter_factory(filter_type):
                 search_value = re.sub(r'[+\-><\(\)~*\"@]+', ' ', self.value())
 
                 terms = search_value.strip().split(" ")
-                query = " ".join(["+" + term for term in terms if term])
+                query = " ".join([f'+"{term}"' for term in terms if term])
+                logger.info(f"Query: {query}")
+
                 kwargs = {f"{self.parameter_name}__search": f"{query}"}
                 return queryset.filter(**kwargs)
             return queryset
