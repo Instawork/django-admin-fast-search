@@ -32,6 +32,7 @@ INSTALLED_APPS = [
 
     'django_admin_fast_search',
     # "django_admin_fast_search.test_utils.test_app"
+    "tests.sqllite_search",
     'tests.test_app'
 
     # if your app has other dependencies that need to be added to the site
