@@ -2,6 +2,10 @@
 import logging
 
 from django.contrib import admin
+from django.core.paginator import Paginator
+from django.db import connections
+from django.db.models import query
+from django.utils.functional import cached_property
 
 import re
 
@@ -41,6 +45,40 @@ class FastSearch(admin.ModelAdmin):
             new_filters += (filter_class,)
         return new_filters + initial_list_filters
 
+    def get_paginator(self, request, *args, **kwargs):
+        """Return an approximate count on pagination only if no filters are specified"""
+        if request.GET:
+            return super().get_paginator(request, *args, **kwargs)
+        return ApproximatePaginator(*args, **kwargs)
+
+
+class ApproximatePaginator(Paginator):
+
+    @cached_property
+    def count(self):
+        """Return a faster approximate row count for MySQL, otherwise fallback to default behavior"""
+        connection = connections[self.object_list.db]
+        is_mysql = getattr(connection, 'vendor', None) == 'mysql'
+
+        if is_mysql and isinstance(self.object_list, query.QuerySet):
+            return self._mysql_approximate_count(connection)
+
+        return super().count
+
+    def _mysql_approximate_count(self, connection):
+        """Use MySQL information_schema to get an approximate row count on the table"""
+        with connection.cursor() as cursor:
+            table_name = self.object_list.model._meta.db_table
+            cursor.execute(
+                """SELECT TABLE_ROWS
+                FROM INFORMATION_SCHEMA.TABLES
+                WHERE TABLE_SCHEMA = DATABASE() AND
+                TABLE_NAME = %s
+                """,
+                (table_name,),
+            )
+            approx_count = cursor.fetchone()[0]
+            return approx_count
 
 def generic_filter_factory(filter_type):
     """
