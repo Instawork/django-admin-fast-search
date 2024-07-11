@@ -56,11 +56,11 @@ class ApproximatePaginator(Paginator):
 
     @cached_property
     def count(self):
-        """Return a faster approximate row count for MySQL, otherwise fallback to default behavior"""
+        """Possibly return a faster approximate row count for MySQL, otherwise fallback to default behavior"""
         connection = connections[self.object_list.db]
         is_mysql = getattr(connection, 'vendor', None) == 'mysql'
 
-        if is_mysql and isinstance(self.object_list, query.QuerySet):
+        if is_mysql and self._can_approximate_count():
             return self._mysql_approximate_count(connection)
 
         return super().count
@@ -79,6 +79,21 @@ class ApproximatePaginator(Paginator):
             )
             approx_count = cursor.fetchone()[0]
             return approx_count
+
+    def _can_approximate_count(self):
+        """
+        Return True if the query doesn't have any filters and as such be approximated, otherwise return False.
+        Inspiration from: https://github.com/adamchainz/django-mysql/blob/9464782c0f3fea1147149411d05e4c771250162f/src/django_mysql/models/query.py#L705
+        """
+        if not isinstance(self.object_list, query.QuerySet):
+            return False
+
+        q = self.object_list.query
+        if q.where or q.high_mark is not None or q.low_mark != 0 or q.select or q.group_by or q.distinct:
+            return False
+
+        return True
+
 
 def generic_filter_factory(filter_type):
     """
