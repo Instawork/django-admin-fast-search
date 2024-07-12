@@ -1,6 +1,7 @@
 from django.test import TestCase
 from django.urls import reverse
 from .factories import AuthSuperUserFactory, TestModel1Factory, TestModel2Factory
+from unittest.mock import patch
 
 
 class AdminFastSearchFormRenderTests(TestCase):
@@ -62,3 +63,28 @@ class AdminFastSearchFormRenderTests(TestCase):
         self.assertEqual(response.status_code, 200)
         # The search doesn't work in SQLLite, so only check the generated query
         self.assertEqual(str(response.context['cl'].queryset.query), 'SELECT "test_app_testmodel2"."id", "test_app_testmodel2"."name", "test_app_testmodel2"."email", "test_app_testmodel2"."phonenumber" FROM "test_app_testmodel2" WHERE "test_app_testmodel2"."name" = ''+"D\'uncan"'' ORDER BY "test_app_testmodel2"."id" DESC')
+
+    @patch("django_admin_fast_search.admin.ApproximatePaginator._mysql_approximate_count")
+    def test_pagination_count_sqllite(self, mock_approximate_count):
+        for _ in range(3):
+            TestModel1Factory()
+
+        url = reverse("admin:test_app_testmodel1_changelist")
+        response = self.client.get(url)
+        list_filters = response.context['cl'].list_filter
+
+        self.assertEqual((response.context['cl'].result_count), 3)
+        self.assertEqual(mock_approximate_count.call_count, 0, "_mysql_approximate_count should not be called for SQLLite engines")
+
+    @patch("django_admin_fast_search.admin.ApproximatePaginator")
+    def test_pagination_count_filters(self, mock_approximate_class):
+        name = "my_first_name"
+        for _ in range(3):
+            TestModel1Factory(name=name)
+
+        url = reverse("admin:test_app_testmodel1_changelist") + f"?name={name}"
+        response = self.client.get(url)
+        list_filters = response.context['cl'].list_filter
+
+        self.assertEqual((response.context['cl'].result_count), 3)
+        self.assertEqual(mock_approximate_class.call_count, 0, "ApproximatePaginator should not be used when filters exist")

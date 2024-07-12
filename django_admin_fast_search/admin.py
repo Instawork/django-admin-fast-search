@@ -2,6 +2,10 @@
 import logging
 
 from django.contrib import admin
+from django.core.paginator import Paginator
+from django.db import connections
+from django.db.models import query
+from django.utils.functional import cached_property
 
 import re
 
@@ -40,6 +44,55 @@ class FastSearch(admin.ModelAdmin):
 
             new_filters += (filter_class,)
         return new_filters + initial_list_filters
+
+    def get_paginator(self, request, *args, **kwargs):
+        """Return an approximate count on pagination only if no filters are specified"""
+        if request.GET:
+            return super().get_paginator(request, *args, **kwargs)
+        return ApproximatePaginator(*args, **kwargs)
+
+
+class ApproximatePaginator(Paginator):
+
+    @cached_property
+    def count(self):
+        """Possibly return a faster approximate row count for MySQL, otherwise fallback to default behavior"""
+        connection = connections[self.object_list.db]
+        is_mysql = getattr(connection, 'vendor', None) == 'mysql'
+
+        if is_mysql and self._can_approximate_count():
+            return self._mysql_approximate_count(connection)
+
+        return super().count
+
+    def _mysql_approximate_count(self, connection):
+        """Use MySQL information_schema to get an approximate row count on the table"""
+        with connection.cursor() as cursor:
+            table_name = self.object_list.model._meta.db_table
+            cursor.execute(
+                """SELECT TABLE_ROWS
+                FROM INFORMATION_SCHEMA.TABLES
+                WHERE TABLE_SCHEMA = DATABASE() AND
+                TABLE_NAME = %s
+                """,
+                (table_name,),
+            )
+            approx_count = cursor.fetchone()[0]
+            return approx_count
+
+    def _can_approximate_count(self):
+        """
+        Return True if the query doesn't have any filters and as such be approximated, otherwise return False.
+        Inspiration from: https://github.com/adamchainz/django-mysql/blob/9464782c0f3fea1147149411d05e4c771250162f/src/django_mysql/models/query.py#L705
+        """
+        if not isinstance(self.object_list, query.QuerySet):
+            return False
+
+        q = self.object_list.query
+        if q.where or q.high_mark is not None or q.low_mark != 0 or q.select or q.group_by or q.distinct:
+            return False
+
+        return True
 
 
 def generic_filter_factory(filter_type):
