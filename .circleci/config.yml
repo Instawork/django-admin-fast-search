@@ -26,7 +26,7 @@ jobs:
           command: pip install -r requirements_test.txt
       - run:
           name: Run tests on Python 3.8.13
-          command: tox -e py38-django-22,py38-django-30,py38-django-31,py38-django-32
+          command: tox -e py38-django-22,py38-django-30,py38-django-31,py38-django-32,py38-django-40,py38-django-41,py38-django-42
   unittests-python39:
     resource_class: small
     working_directory: ~/django-admin-fast-search
@@ -39,7 +39,7 @@ jobs:
           command: pip install -r requirements_test.txt
       - run:
           name: Run tests on Python 3.9.13
-          command: tox -e py39-django-22,py39-django-30,py39-django-31,py39-django-32
+          command: tox -e py39-django-22,py39-django-30,py39-django-31,py39-django-32,py39-django-40,py39-django-41,py39-django-42
   unittests-python310:
     resource_class: small
     working_directory: ~/django-admin-fast-search
@@ -52,29 +52,29 @@ jobs:
           command: pip install -r requirements_test.txt
       - run:
           name: Run tests on Python 3.10.4
-          command: tox -e py310-django-22,py310-django-30,py310-django-31,py310-django-32
+          command: tox -e py310-django-22,py310-django-30,py310-django-31,py310-django-32,py310-django-40,py310-django-41,py310-django-42
 
   test_pypi_publish:
     docker:
       - image: cimg/python:3.10.4
     steps:
-      - checkout  # checkout source code to working directory
+      - checkout # checkout source code to working directory
       - run:
           name: Install dependencies
           command: pip install -r requirements_dev.txt -r requirements_test.txt
       - run:
-          command: |  # create whl, install twine and publish to Test PyPI
+          command: | # create whl, install twine and publish to Test PyPI
             invoke testrelease
   pypi_publish:
     docker:
       - image: cimg/python:3.10.4
     steps:
-      - checkout  # checkout source code to working directory
+      - checkout # checkout source code to working directory
       - run:
           name: Install dependencies
           command: pip install -r requirements_dev.txt -r requirements_test.txt
       - run:
-          command: |  # create whl, install twine and publish to PyPI
+          command: | # create whl, install twine and publish to PyPI
             invoke release
 
 workflows:
