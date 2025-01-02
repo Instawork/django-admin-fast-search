@@ -8,10 +8,15 @@
   {% if cl.has_filters %}
     <div id="changelist-filter">
       <h2>{% trans 'Filter' %}</h2>
-    <form method="get">
-      {% for spec in cl.filter_specs %}{% admin_list_filter cl spec %}{% endfor %}
-      <input type="submit" value="Apply filters">
-    </form>
+      {% if cl.has_active_filters %}
+      <h3 id="changelist-filter-clear">
+        <a href="{{ cl.clear_all_filters_qs }}">&#10006; {% translate "Clear all filters" %}</a>
+      </h3>
+      {% endif %}
+      <form method="get">
+        {% for spec in cl.filter_specs %}{% admin_list_filter cl spec %}{% endfor %}
+        <input type="submit" value="Filter">
+      </form>
     </div>
   {% endif %}
 {% endblock %}
