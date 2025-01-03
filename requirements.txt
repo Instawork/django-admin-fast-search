@@ -1,1 +1,1 @@
-django-filter==23.5
+django-filter>=23.5
