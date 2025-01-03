@@ -2,25 +2,14 @@ from django.test import TestCase
 from django.urls import reverse
 from .factories import AuthSuperUserFactory, TestModel1Factory, TestModel2Factory, TestModel4Factory
 from unittest.mock import patch
-from tests.test_app.models import TestModel4
 
-import logging
-
-logger = logging.getLogger(__name__)
 
 class AdminFastSearchFormRenderTests(TestCase):
     def setUp(self):
         admin_user = AuthSuperUserFactory()
         self.client.force_login(admin_user)
 
-    def test_correct_filter_classes_used_model_1_admin(self):
-        # Existing tests...
-        pass
-
-    # ...other existing test methods...
-
     def test_correct_filter_classes_used_model_4_admin(self):
-        # Create some test data
         for _ in range(10):
             TestModel4Factory()
         url = reverse("admin:test_app_testmodel4_changelist")
@@ -28,14 +17,6 @@ class AdminFastSearchFormRenderTests(TestCase):
         response = self.client.get(url)
         list_filters = response.context['cl'].list_filter
         self.assertEqual(response.context['cl'].result_count, 10)
-        # We need to check that the correct filters are being used
-
-        # The filters defined are:
-        # name (CharFilter with lookup_expr="icontains")
-        # email (CharFilter with lookup_expr="exact")
-        # phonenumber (CharFilter with lookup_expr="exact")
-        # is_verified (BooleanFilter)
-        # activation_date (DateFilter with field_name="date_created", lookup_expr="gt")
 
         expected_filter_names = ['name', 'email', 'phonenumber', 'is_verified', 'activation_date']
         self.assertEqual(len(list_filters), len(expected_filter_names))
@@ -51,7 +32,6 @@ class AdminFastSearchFormRenderTests(TestCase):
             self.assertIn(filter_name, filter_dict)
 
     def test_filters_function_correctly_model_4_admin(self):
-        # Create some test data
         user1 = TestModel4Factory(
             name="Alice Smith",
             email="alice@example.com",
@@ -128,4 +108,49 @@ class AdminFastSearchFormRenderTests(TestCase):
         self.assertEqual(response.context['cl'].result_count, 3)
         self.assertEqual(mock_approximate_count.call_count, 0, "_mysql_approximate_count should not be called for SQLLite engines")
 
-    # Additional tests can be written to test combined filters, invalid inputs, etc.
+    def test_combined_filters_model_4(self):
+        TestModel4Factory(
+            name="Alice Smith",
+            email="alice@example.com",
+            phonenumber="1234567890",
+            is_verified=True,
+            activated_at="2023-10-01"
+        )
+        user2 = TestModel4Factory(
+            name="Bob Johnson",
+            email="bob@example.com",
+            phonenumber="0987654321",
+            is_verified=False,
+            activated_at="2023-09-15"
+        )
+        TestModel4Factory(
+            name="Charlie Williams",
+            email="charlie@example.com",
+            phonenumber="5555555555",
+            is_verified=True,
+            activated_at="2023-08-20"
+        )
+
+
+        # Test combined filters
+        url = reverse("admin:test_app_testmodel4_changelist") + "?name=Bob&is_verified=False"
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['cl'].result_count, 1)
+        self.assertEqual(response.context['cl'].result_list.first().id, user2.id)
+
+    def test_invalid_inputs_model_4(self):
+        TestModel4Factory(
+            name="Alice Smith",
+            email="alice@example.com",
+            phonenumber="1234567890",
+            is_verified=True,
+            activated_at="2023-10-01"
+        )
+
+        # Test invalid phonenumber filter
+        url = reverse("admin:test_app_testmodel4_changelist") + "?phonenumber=123"
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['cl'].result_count, 0)
+
