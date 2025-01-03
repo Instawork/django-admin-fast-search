@@ -3,6 +3,7 @@ import logging
 import django_filters
 
 from django.contrib import admin
+from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
 from django.db import connections
 from django.db.models import query
@@ -173,7 +174,11 @@ class BaseListFilter(admin.SimpleListFilter):
 
     def queryset(self, request, queryset):
         if hasattr(self, "admin_filter_instance"):
-            return self.admin_filter_instance.filter(queryset, self.value())
+            try:
+                value = self.admin_filter_instance.field.to_python(self.value())
+                return self.admin_filter_instance.filter(queryset, value)
+            except ValidationError:
+                return queryset
         return queryset
 
     def __init_subclass__(cls, **kwargs):
