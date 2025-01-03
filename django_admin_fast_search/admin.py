@@ -29,7 +29,7 @@ class FastSearch(admin.ModelAdmin):
         return True
 
     def get_list_filter(self, request):
-        initial_list_filters = self.list_filter
+        initial_list_filters = tuple(self.list_filter)
 
         new_filters = ()
 
