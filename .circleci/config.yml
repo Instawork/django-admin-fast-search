@@ -1,19 +1,6 @@
 ---
 version: 2.1
 jobs:
-  unittests-python37:
-    resource_class: small
-    working_directory: ~/django-admin-fast-search
-    docker:
-      - image: cimg/python:3.7.13
-    steps:
-      - checkout
-      - run:
-          name: Install dependencies
-          command: pip install -r requirements_test.txt
-      - run:
-          name: Run tests on Python 3.7.13
-          command: tox -e py37-django-22,py37-django-30,py37-django-31,py37-django-32
   unittests-python38:
     resource_class: small
     working_directory: ~/django-admin-fast-search
@@ -26,7 +13,7 @@ jobs:
           command: pip install -r requirements_test.txt
       - run:
           name: Run tests on Python 3.8.13
-          command: tox -e py38-django-22,py38-django-30,py38-django-31,py38-django-32,py38-django-40,py38-django-41,py38-django-42
+          command: tox -e py38-django-40,py38-django-41,py38-django-42
   unittests-python39:
     resource_class: small
     working_directory: ~/django-admin-fast-search
@@ -39,7 +26,7 @@ jobs:
           command: pip install -r requirements_test.txt
       - run:
           name: Run tests on Python 3.9.13
-          command: tox -e py39-django-22,py39-django-30,py39-django-31,py39-django-32,py39-django-40,py39-django-41,py39-django-42
+          command: tox -e py39-django-40,py39-django-41,py39-django-42
   unittests-python310:
     resource_class: small
     working_directory: ~/django-admin-fast-search
@@ -52,7 +39,7 @@ jobs:
           command: pip install -r requirements_test.txt
       - run:
           name: Run tests on Python 3.10.4
-          command: tox -e py310-django-22,py310-django-30,py310-django-31,py310-django-32,py310-django-40,py310-django-41,py310-django-42
+          command: tox -e py310-django-40,py310-django-41,py310-django-42
 
   test_pypi_publish:
     docker:
@@ -81,7 +68,6 @@ workflows:
   version: 2
   validate-pr:
     jobs:
-      - unittests-python37
       - unittests-python38
       - unittests-python39
       - unittests-python310

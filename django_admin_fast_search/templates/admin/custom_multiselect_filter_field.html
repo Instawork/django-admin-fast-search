@@ -1,0 +1,14 @@
+{% load static %}
+{% load i18n %}
+
+<h3>{% blocktrans with filter_title=title %} {{ filter_title }} {% endblocktrans %}</h3>
+
+<ul>
+  <select name="{{ spec.parameter_name }}" multiple="multiple" style="width: 100%">
+    {% for value, label in spec.lookup_choices %}
+    <option value="{{ value }}" {% if value in spec.value %}selected{% endif %}>{{ label }}
+    </option>
+    {% endfor %}
+  </select>
+</ul>
+

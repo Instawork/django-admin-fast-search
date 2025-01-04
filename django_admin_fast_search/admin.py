@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 import logging
+import django_filters
 
 from django.contrib import admin
+from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
 from django.db import connections
 from django.db.models import query
@@ -28,7 +30,7 @@ class FastSearch(admin.ModelAdmin):
         return True
 
     def get_list_filter(self, request):
-        initial_list_filters = self.list_filter
+        initial_list_filters = tuple(self.list_filter)
 
         new_filters = ()
 
@@ -162,3 +164,139 @@ def generic_filter_factory(filter_type):
         return GenericSearchFilter
     else:
         return GenericExactFilter
+
+
+
+
+class BaseListFilter(admin.SimpleListFilter):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def queryset(self, request, queryset):
+        if hasattr(self, "admin_filter_instance"):
+            try:
+                value = self.admin_filter_instance.field.to_python(self.value())
+                return self.admin_filter_instance.filter(queryset, value)
+            except ValidationError:
+                return queryset
+        return queryset
+
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+        for attr_name, attr_value in kwargs.items():
+            setattr(cls, attr_name, attr_value)
+
+
+class FastSearchFilterMixin:
+    @classmethod
+    def as_admin_filters(cls):
+        admin_filters = []
+        for name, filter_instance in cls.base_filters.items():
+            admin_filter_class = cls._create_admin_filter(name, filter_instance)
+            if admin_filter_class:
+                admin_filters.append(admin_filter_class)
+        return admin_filters
+
+    @classmethod
+    def _create_admin_filter(cls, name, filter_instance):
+        if isinstance(filter_instance, django_filters.BooleanFilter):
+            return cls._create_boolean_list_filter(name, filter_instance)
+        elif isinstance(filter_instance, django_filters.MultipleChoiceFilter):
+            return cls._create_multiple_choice_list_filter(name, filter_instance)
+        elif isinstance(filter_instance, django_filters.ChoiceFilter):
+            return cls._create_choice_list_filter(name, filter_instance)
+        elif isinstance(filter_instance, django_filters.CharFilter):
+            return cls._create_char_list_filter(name, filter_instance)
+        elif isinstance(filter_instance, django_filters.DateFilter):
+            return cls._create_date_list_filter(name, filter_instance)
+        else:
+            raise NotImplementedError(f"Filter type {type(filter_instance)} is not supported yet.")
+
+    @classmethod
+    def _get_field_name_and_title(cls, name, filter_instance):
+        field_name = filter_instance.field_name or name
+        title = filter_instance.label or field_name.replace("__", " → ").replace("_", " ").title()
+        return field_name, title
+
+    @classmethod
+    def _get_filter_class(cls, name, filter_instance, methods, base_class=BaseListFilter):
+        field_name, title = cls._get_field_name_and_title(name, filter_instance)
+        class_attrs = {
+            "title": title,
+            "parameter_name": name,
+            "admin_filter_instance": filter_instance,
+        }
+        class_attrs.update(methods)
+
+        return type(f'{name.title().replace("_", "")}ListFilter', (base_class,), class_attrs)
+
+    @classmethod
+    def _create_choice_list_filter(cls, name, filter_instance):
+        choices = filter_instance.extra.get("choices") or filter_instance.field.choices
+
+        def lookups(self, request, model_admin):
+            return choices
+
+        methods = {"lookups": lookups}
+
+        return cls._get_filter_class(name, filter_instance, methods)
+
+    @classmethod
+    def _create_boolean_list_filter(cls, name, filter_instance):
+        field_name, _ = cls._get_field_name_and_title(name, filter_instance)
+
+        def lookups(self, request, model_admin):
+            return (
+                ("True", "Yes"),
+                ("False", "No"),
+            )
+
+        methods = {"lookups": lookups}
+
+        return cls._get_filter_class(name, filter_instance, methods)
+
+    @classmethod
+    def _create_char_list_filter(cls, name, filter_instance):
+        def lookups(self, request, model_admin):
+            return ((self.parameter_name, self.parameter_name),)
+
+        methods = {
+            "lookups": lookups,
+            "template": "admin/custom_search_field.html",
+        }
+
+        return cls._get_filter_class(name, filter_instance, methods)
+
+    @classmethod
+    def _create_multiple_choice_list_filter(cls, name, filter_instance):
+        choices = filter_instance.extra.get("choices") or filter_instance.field.choices
+
+        def __init__(self, request, *args, **kwargs):
+            super(self.__class__, self).__init__(request, *args, **kwargs)
+            if self.parameter_name in self.used_parameters:
+                self.used_parameters[self.parameter_name] = request.GET.getlist(self.parameter_name)
+
+        def lookups(self, request, model_admin):
+            return choices
+
+        methods = {
+            "lookups": lookups,
+            "template": "admin/custom_multiselect_filter_field.html",
+            "__init__": __init__,
+        }
+
+        return cls._get_filter_class(name, filter_instance, methods)
+
+    @classmethod
+    def _create_date_list_filter(cls, name, filter_instance):
+        field_name, _ = cls._get_field_name_and_title(name, filter_instance)
+
+        def lookups(self, request, model_admin):
+            return ((self.parameter_name, self.parameter_name),)
+
+        methods = {
+            "lookups": lookups,
+            "template": "admin/custom_date_filter_field.html",
+        }
+
+        return cls._get_filter_class(name, filter_instance, methods)
