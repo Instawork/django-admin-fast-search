@@ -8,6 +8,7 @@ from django.core.paginator import Paginator
 from django.db import connections
 from django.db.models import query
 from django.utils.functional import cached_property
+from django.urls import reverse
 
 import re
 
@@ -201,6 +202,8 @@ class FastSearchFilterMixin:
     def _create_admin_filter(cls, name, filter_instance):
         if isinstance(filter_instance, django_filters.BooleanFilter):
             return cls._create_boolean_list_filter(name, filter_instance)
+        elif isinstance(filter_instance, django_filters.ModelChoiceFilter):
+            return cls._create_model_choice_list_filter(name, filter_instance)
         elif isinstance(filter_instance, django_filters.MultipleChoiceFilter):
             return cls._create_multiple_choice_list_filter(name, filter_instance)
         elif isinstance(filter_instance, django_filters.ChoiceFilter):
@@ -273,6 +276,32 @@ class FastSearchFilterMixin:
         methods = {
             "lookups": lookups,
             "template": "admin/custom_number_filter_field.html",
+        }
+
+        return cls._get_filter_class(name, filter_instance, methods)
+
+    @classmethod
+    def _create_model_choice_list_filter(cls, name, filter_instance):
+        field_name, _ = cls._get_field_name_and_title(name, filter_instance)
+
+        def lookups(self, request, model_admin):
+            return ((self.parameter_name, self.parameter_name),)
+
+        def popup_changelist_url(self):
+            nonlocal filter_instance
+
+            return reverse(
+                "admin:{}_{}_changelist".format(
+                    filter_instance.field.queryset.model._meta.app_label,
+                    filter_instance.field.queryset.model._meta.model_name
+                )
+            )
+
+
+        methods = {
+            "lookups": lookups,
+            "template": "admin/custom_model_choice_filter_field.html",
+            "popup_changelist_url": popup_changelist_url,
         }
 
         return cls._get_filter_class(name, filter_instance, methods)
