@@ -209,6 +209,8 @@ class FastSearchFilterMixin:
             return cls._create_char_list_filter(name, filter_instance)
         elif isinstance(filter_instance, django_filters.DateFilter):
             return cls._create_date_list_filter(name, filter_instance)
+        elif isinstance(filter_instance, django_filters.NumberFilter):
+            return cls._create_number_list_filter(name, filter_instance)
         else:
             raise NotImplementedError(f"Filter type {type(filter_instance)} is not supported yet.")
 
@@ -252,6 +254,18 @@ class FastSearchFilterMixin:
             )
 
         methods = {"lookups": lookups}
+
+    @classmethod
+    def _create_number_list_filter(cls, name, filter_instance):
+        field_name, _ = cls._get_field_name_and_title(name, filter_instance)
+
+        def lookups(self, request, model_admin):
+            return ((self.parameter_name, self.parameter_name),)
+
+        methods = {
+            "lookups": lookups,
+            "template": "admin/custom_number_filter_field.html",
+        }
 
         return cls._get_filter_class(name, filter_instance, methods)
 
