@@ -239,7 +239,10 @@ class FastSearchFilterMixin:
         def lookups(self, request, model_admin):
             return choices
 
-        methods = {"lookups": lookups}
+        methods = {
+            "lookups": lookups,
+            "template": "admin/custom_choice_filter_field.html",
+        }
 
         return cls._get_filter_class(name, filter_instance, methods)
 
