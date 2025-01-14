@@ -15,7 +15,9 @@
       {% endif %}
       <form method="get">
         {% for spec in cl.filter_specs %}{% admin_list_filter cl spec %}{% endfor %}
-        <input type="submit" value="Filter">
+        <ul style="padding: 5px 15px;">
+          <input type="submit" value="Filter">
+        </ul>
       </form>
     </div>
   {% endif %}
