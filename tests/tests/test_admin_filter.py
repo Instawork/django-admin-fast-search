@@ -1,6 +1,6 @@
 from django.test import TestCase
 from django.urls import reverse
-from .factories import AuthSuperUserFactory, TestModel1Factory, TestModel2Factory, TestModel4Factory
+from .factories import AuthSuperUserFactory, TestModel4Factory
 from unittest.mock import patch
 
 
