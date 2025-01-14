@@ -319,3 +319,7 @@ class FastSearchFilterMixin:
         }
 
         return cls._get_filter_class(name, filter_instance, methods)
+
+
+class FastSearchFilterSet(FastSearchFilterMixin, django_filters.FilterSet):
+    pass
