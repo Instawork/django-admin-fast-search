@@ -253,7 +253,12 @@ class FastSearchFilterMixin:
                 ("False", "No"),
             )
 
-        methods = {"lookups": lookups}
+        methods = {
+            "lookups": lookups,
+            "template": "admin/custom_boolean_filter_field.html",
+        }
+
+        return cls._get_filter_class(name, filter_instance, methods)
 
     @classmethod
     def _create_number_list_filter(cls, name, filter_instance):
