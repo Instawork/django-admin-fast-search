@@ -1,11 +1,14 @@
 {% extends 'admin/change_list.html' %}
 {% load i18n %}
 {% load admin_list %}
+{% load static %}
 
 {% block search %}{% endblock %}
 
 {% block filters %}
   {% if cl.has_filters %}
+    <link rel="stylesheet" type="text/css" href="{% static 'css/django_admin_fast_search.css' %}">
+
     <div id="changelist-filter">
       <h2>{% trans 'Filter' %}</h2>
       {% if cl.has_active_filters %}
@@ -15,7 +18,7 @@
       {% endif %}
       <form method="get">
         {% for spec in cl.filter_specs %}{% admin_list_filter cl spec %}{% endfor %}
-        <ul style="padding: 5px 15px;">
+        <ul class="fast-filter-action-list">
           <input type="submit" value="Filter">
         </ul>
       </form>
