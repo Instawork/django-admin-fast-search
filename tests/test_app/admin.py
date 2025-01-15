@@ -1,11 +1,11 @@
 from django.contrib import admin
 
-from django_admin_fast_search.admin import FastSearch, FastSearchFilterMixin
-from django_filters import FilterSet, CharFilter, BooleanFilter, DateFilter
+from django_admin_fast_search.admin import FastSearch, FastSearchFilterSet
+from django_filters import FilterSet, CharFilter, BooleanFilter, DateFilter, ModelChoiceFilter
 
 from .models import TestModel1, TestModel2, TestModel3, TestModel4
 
-class TestModel4Filter(FastSearchFilterMixin, FilterSet):
+class TestModel4Filter(FastSearchFilterSet):
     name = CharFilter(lookup_expr="icontains")
     email = CharFilter(lookup_expr="exact")
     phonenumber = CharFilter(lookup_expr="exact")
@@ -19,6 +19,7 @@ class TestModel4Filter(FastSearchFilterMixin, FilterSet):
             "name",
             "email",
             "phonenumber",
+            "ref3",
             "is_verified",
             "activation_date",
         ]

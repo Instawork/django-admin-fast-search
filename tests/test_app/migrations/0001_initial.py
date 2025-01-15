@@ -45,6 +45,7 @@ class Migration(migrations.Migration):
                 ('name', models.CharField(max_length=255)),
                 ('email', models.EmailField(max_length=254)),
                 ('phonenumber', models.CharField(max_length=20)),
+                ('ref3', models.ForeignKey(blank=True, null=True, on_delete=models.CASCADE, to='test_app.testmodel3')),
                 ('is_verified', models.BooleanField(default=False)),
                 ('activated_at', models.DateTimeField()),
                 ('date_created', models.DateTimeField(auto_now_add=True)),
