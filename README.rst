@@ -54,7 +54,7 @@ Use it for list filters with django_filters_
 
 .. code-block:: python
 
-   from django_filters import BooleanFilter, FilterSet
+   from django_filters import BooleanFilter, CharFilter, ModelChoiceFilter, FilterSet
    from django_admin_fast_search.admin import FastSearchFilterMixin
 
    class MyModelFilter(FastSearchFilterMixin, FilterSet):
@@ -62,6 +62,10 @@ Use it for list filters with django_filters_
 
        company_name = CharFilter(field_name="company__name", lookup_expr="icontains")
        company_pincode = CharFilter(field_name="company__location_pincode", lookup_expr="exact")
+
+       company = ModelChoiceFilter()
+       # OR
+       company = ModelChoiceFilter(queryset=Company.objects.active())
 
        exclude_industry = CharFilter(field_name="industry", lookup_expr="icontains", label="Exclude Industry", exclude=True)
 
@@ -80,6 +84,7 @@ Use it for list filters with django_filters_
                "is_verified",
                "company_name",
                "company_pincode",
+               "company",
                "exclude_industry",
                "status",
                "created_at",
