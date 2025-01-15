@@ -1,6 +1,7 @@
 from django.test import TestCase
 from django.urls import reverse
-from .factories import AuthSuperUserFactory, TestModel4Factory
+from django.utils import timezone
+from .factories import AuthSuperUserFactory, TestModel3Factory, TestModel4Factory
 from unittest.mock import patch
 
 
@@ -18,7 +19,7 @@ class AdminFastSearchFormRenderTests(TestCase):
         list_filters = response.context['cl'].list_filter
         self.assertEqual(response.context['cl'].result_count, 10)
 
-        expected_filter_names = ['name', 'email', 'phonenumber', 'is_verified', 'activation_date']
+        expected_filter_names = ['name', 'email', 'phonenumber', 'ref3', 'is_verified', 'activation_date']
         self.assertEqual(len(list_filters), len(expected_filter_names))
 
         # Build a mapping of filter parameter names to their classes
@@ -37,21 +38,21 @@ class AdminFastSearchFormRenderTests(TestCase):
             email="alice@example.com",
             phonenumber="1234567890",
             is_verified=True,
-            activated_at="2023-10-01"
+            activated_at=timezone.make_aware(timezone.datetime(2023, 10, 1))
         )
         user2 = TestModel4Factory(
             name="Bob Johnson",
             email="bob@example.com",
             phonenumber="0987654321",
             is_verified=False,
-            activated_at="2023-09-15"
+            activated_at=timezone.make_aware(timezone.datetime(2023, 9, 15))
         )
         user3 = TestModel4Factory(
             name="Charlie Williams",
             email="charlie@example.com",
             phonenumber="5555555555",
             is_verified=True,
-            activated_at="2023-08-20"
+            activated_at=timezone.make_aware(timezone.datetime(2023, 8, 20))
         )
 
         # Test name filter (icontains)
@@ -90,6 +91,7 @@ class AdminFastSearchFormRenderTests(TestCase):
         self.assertIn(user1.id, result_ids)
         self.assertIn(user3.id, result_ids)
 
+
         # Test activation_date filter (date_created > given date)
         url = reverse("admin:test_app_testmodel4_changelist") + "?activation_date=2023-09-20"
         response = self.client.get(url)
@@ -97,6 +99,41 @@ class AdminFastSearchFormRenderTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context['cl'].result_count, 1)
         self.assertEqual(response.context['cl'].result_list.first().id, user1.id)
+
+    def test_model_choice_filters(self):
+        model3_1 = TestModel3Factory(name="LinkedModel1")
+        model3_2 = TestModel3Factory(name="LinkedModel2")
+
+        user1 = TestModel4Factory(ref3=model3_1, name="User with Model 1")
+        user2 = TestModel4Factory(ref3=model3_2, name="User with Model 2")
+        user3 = TestModel4Factory(ref3=None, name="User without Model")
+
+        url = reverse("admin:test_app_testmodel4_changelist")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['cl'].result_count, 3)
+
+        # Test ref3 filter
+        url = reverse("admin:test_app_testmodel4_changelist") + f"?ref3={model3_1.pk}"
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['cl'].result_count, 1)
+        self.assertEqual(response.context['cl'].result_list.first().id, user1.id)
+
+        # Test ref3 filter with another linked model
+        url = reverse("admin:test_app_testmodel4_changelist") + f"?ref3={model3_2.pk}"
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['cl'].result_count, 1)
+        self.assertEqual(response.context['cl'].result_list.first().id, user2.id)
+
+        # Test ref3 filter for invalid value
+        url = reverse("admin:test_app_testmodel4_changelist") + "?ref3=None"
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['cl'].result_count, 3)
+        self.assertEqual(response.context['cl'].result_list.first().id, user3.id)
+
 
     @patch("django_admin_fast_search.admin.ApproximatePaginator._mysql_approximate_count")
     def test_pagination_count_filters_model_4(self, mock_approximate_count):
@@ -114,21 +151,21 @@ class AdminFastSearchFormRenderTests(TestCase):
             email="alice@example.com",
             phonenumber="1234567890",
             is_verified=True,
-            activated_at="2023-10-01"
+            activated_at=timezone.make_aware(timezone.datetime(2023, 10, 1))
         )
         user2 = TestModel4Factory(
             name="Bob Johnson",
             email="bob@example.com",
             phonenumber="0987654321",
             is_verified=False,
-            activated_at="2023-09-15"
+            activated_at=timezone.make_aware(timezone.datetime(2023, 9, 15))
         )
         TestModel4Factory(
             name="Charlie Williams",
             email="charlie@example.com",
             phonenumber="5555555555",
             is_verified=True,
-            activated_at="2023-08-20"
+            activated_at=timezone.make_aware(timezone.datetime(2023, 8, 20))
         )
 
 
@@ -145,7 +182,7 @@ class AdminFastSearchFormRenderTests(TestCase):
             email="alice@example.com",
             phonenumber="1234567890",
             is_verified=True,
-            activated_at="2023-10-01"
+            activated_at=timezone.make_aware(timezone.datetime(2023, 10, 1))
         )
 
         # Test invalid phonenumber filter

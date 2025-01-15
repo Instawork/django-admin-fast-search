@@ -4,7 +4,8 @@
 <h3>{% blocktrans with filter_title=title %} {{ filter_title }} {% endblocktrans %}</h3>
 
 <ul class="fast-filter-list">
-  <select name="{{ spec.parameter_name }}" multiple="multiple">
+  <select name="{{ spec.parameter_name }}">
+    <option value="" {% if spec.value == "" %}selected{% endif %}>{% trans "Any" %}</option>
     {% for value, label in spec.lookup_choices %}
     <option value="{{ value }}" {% if value in spec.value %}selected{% endif %}>{{ label }}
     </option>

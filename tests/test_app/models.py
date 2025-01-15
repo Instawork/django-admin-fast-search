@@ -25,7 +25,8 @@ class TestModel4(models.Model):
     email = models.EmailField()
     phonenumber = models.CharField(max_length=20)
 
+    ref3 = models.ForeignKey(TestModel3, on_delete=models.CASCADE, null=True, blank=True)
+
     is_verified = models.BooleanField(default=False)
     activated_at = models.DateTimeField()
     date_created = models.DateTimeField(auto_now_add=True)
-

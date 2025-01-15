@@ -3,8 +3,8 @@
 
 <h3>{% blocktrans with filter_title=title %} {{ filter_title }} {% endblocktrans %}</h3>
 
-<ul>
-  <select name="{{ spec.parameter_name }}" style="width: 100%">
+<ul class="fast-filter-list">
+  <select name="{{ spec.parameter_name }}">
     <option value="" {% if spec.value == "" %}selected{% endif %}>{% trans "Any" %}</option>
     <option value="True" {% if spec.value == "True" %}selected{% endif %}>{% trans "True" %}</option>
     <option value="False" {% if spec.value == "False" %}selected{% endif %}>{% trans "False" %}</option>

@@ -1,0 +1,22 @@
+input[type=date]:focus {
+  border-color: var(--body-quiet-color);
+}
+
+#changelist-filter #fast-filter-action-list {
+  padding: 5px 15px;
+}
+
+.fast-filter-list select, .fast-filter-list input[type="text"], .fast-filter-list input[type="number"], .fast-filter-list input[type="date"] {
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: 5px 6px;
+  margin-top: 0;
+  color: var(--body-fg);
+  background-color: var(--body-bg);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.fast-filter-list .flex-container {
+  align-items: baseline;
+}

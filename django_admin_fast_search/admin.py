@@ -1,13 +1,18 @@
 # -*- coding: utf-8 -*-
 import logging
+from django.utils import timezone
+from datetime import datetime
 import django_filters
 
+from django.urls import NoReverseMatch
 from django.contrib import admin
+from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
 from django.db import connections
 from django.db.models import query
 from django.utils.functional import cached_property
+from django.urls import reverse
 
 import re
 
@@ -175,11 +180,13 @@ class BaseListFilter(admin.SimpleListFilter):
     def queryset(self, request, queryset):
         if hasattr(self, "admin_filter_instance"):
             try:
-                value = self.admin_filter_instance.field.to_python(self.value())
-                return self.admin_filter_instance.filter(queryset, value)
+                return self.admin_filter_instance.filter(queryset, self.get_python_value())
             except ValidationError:
                 return queryset
         return queryset
+
+    def get_python_value(self):
+        return self.admin_filter_instance.field.to_python(self.value())
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
@@ -201,6 +208,8 @@ class FastSearchFilterMixin:
     def _create_admin_filter(cls, name, filter_instance):
         if isinstance(filter_instance, django_filters.BooleanFilter):
             return cls._create_boolean_list_filter(name, filter_instance)
+        elif isinstance(filter_instance, django_filters.ModelChoiceFilter):
+            return cls._create_model_choice_list_filter(name, filter_instance)
         elif isinstance(filter_instance, django_filters.MultipleChoiceFilter):
             return cls._create_multiple_choice_list_filter(name, filter_instance)
         elif isinstance(filter_instance, django_filters.ChoiceFilter):
@@ -239,7 +248,10 @@ class FastSearchFilterMixin:
         def lookups(self, request, model_admin):
             return choices
 
-        methods = {"lookups": lookups}
+        methods = {
+            "lookups": lookups,
+            "template": "admin/custom_choice_filter_field.html",
+        }
 
         return cls._get_filter_class(name, filter_instance, methods)
 
@@ -270,6 +282,37 @@ class FastSearchFilterMixin:
         methods = {
             "lookups": lookups,
             "template": "admin/custom_number_filter_field.html",
+        }
+
+        return cls._get_filter_class(name, filter_instance, methods)
+
+    @classmethod
+    def _create_model_choice_list_filter(cls, name, filter_instance):
+        field_name, _ = cls._get_field_name_and_title(name, filter_instance)
+
+        def lookups(self, request, model_admin):
+            return ((self.parameter_name, self.parameter_name),)
+
+        def popup_changelist_url(self):
+            nonlocal filter_instance
+
+            try:
+                return reverse(
+                    "admin:{}_{}_changelist".format(
+                        filter_instance.field.queryset.model._meta.app_label,
+                        filter_instance.field.queryset.model._meta.model_name
+                    )
+                )
+            except (NoReverseMatch, AttributeError) as e:
+                logger.error(f"Error while trying to get the changelist url for {self.parameter_name}: {e}")
+                raise e
+
+
+
+        methods = {
+            "lookups": lookups,
+            "template": "admin/custom_model_choice_filter_field.html",
+            "popup_changelist_url": popup_changelist_url,
         }
 
         return cls._get_filter_class(name, filter_instance, methods)
@@ -313,9 +356,21 @@ class FastSearchFilterMixin:
         def lookups(self, request, model_admin):
             return ((self.parameter_name, self.parameter_name),)
 
+        def get_python_value(self):
+            date_value = self.admin_filter_instance.field.to_python(self.value())
+            if date_value is None:
+                return None
+
+            datetime_value = datetime.combine(date_value, datetime.min.time())
+            if settings.USE_TZ and timezone.is_naive(datetime_value):
+                return timezone.make_aware(datetime_value, timezone.get_current_timezone())
+
+            return date_value
+
         methods = {
             "lookups": lookups,
             "template": "admin/custom_date_filter_field.html",
+            "get_python_value": get_python_value,
         }
 
         return cls._get_filter_class(name, filter_instance, methods)
