@@ -1,8 +1,11 @@
 # -*- coding: utf-8 -*-
 import logging
+from django.utils import timezone
+from datetime import datetime
 import django_filters
 
 from django.contrib import admin
+from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
 from django.db import connections
@@ -176,11 +179,13 @@ class BaseListFilter(admin.SimpleListFilter):
     def queryset(self, request, queryset):
         if hasattr(self, "admin_filter_instance"):
             try:
-                value = self.admin_filter_instance.field.to_python(self.value())
-                return self.admin_filter_instance.filter(queryset, value)
+                return self.admin_filter_instance.filter(queryset, self.get_python_value())
             except ValidationError:
                 return queryset
         return queryset
+
+    def get_python_value(self):
+        return self.admin_filter_instance.field.to_python(self.value())
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
@@ -345,9 +350,21 @@ class FastSearchFilterMixin:
         def lookups(self, request, model_admin):
             return ((self.parameter_name, self.parameter_name),)
 
+        def get_python_value(self):
+            date_value = self.admin_filter_instance.field.to_python(self.value())
+            if date_value is None:
+                return None
+
+            datetime_value = datetime.combine(date_value, datetime.min.time())
+            if settings.USE_TZ and timezone.is_naive(datetime_value):
+                return timezone.make_aware(datetime_value, timezone.get_current_timezone())
+
+            return date_value
+
         methods = {
             "lookups": lookups,
             "template": "admin/custom_date_filter_field.html",
+            "get_python_value": get_python_value,
         }
 
         return cls._get_filter_class(name, filter_instance, methods)
