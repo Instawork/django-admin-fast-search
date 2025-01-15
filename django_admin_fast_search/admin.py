@@ -4,6 +4,7 @@ from django.utils import timezone
 from datetime import datetime
 import django_filters
 
+from django.urls import NoReverseMatch
 from django.contrib import admin
 from django.conf import settings
 from django.core.exceptions import ValidationError
@@ -295,12 +296,17 @@ class FastSearchFilterMixin:
         def popup_changelist_url(self):
             nonlocal filter_instance
 
-            return reverse(
-                "admin:{}_{}_changelist".format(
-                    filter_instance.field.queryset.model._meta.app_label,
-                    filter_instance.field.queryset.model._meta.model_name
+            try:
+                return reverse(
+                    "admin:{}_{}_changelist".format(
+                        filter_instance.field.queryset.model._meta.app_label,
+                        filter_instance.field.queryset.model._meta.model_name
+                    )
                 )
-            )
+            except (NoReverseMatch, AttributeError) as e:
+                logger.error(f"Error while trying to get the changelist url for {self.parameter_name}: {e}")
+                raise e
+
 
 
         methods = {
