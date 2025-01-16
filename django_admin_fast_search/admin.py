@@ -181,7 +181,7 @@ class BaseListFilter(admin.SimpleListFilter):
         if hasattr(self, "admin_filter_instance"):
             try:
                 return self.admin_filter_instance.filter(queryset, self.get_python_value())
-            except ValidationError:
+            except (ValidationError, ValueError):
                 return queryset
         return queryset
 
