@@ -178,6 +178,19 @@ class BaseListFilter(admin.SimpleListFilter):
         super().__init__(*args, **kwargs)
 
     def queryset(self, request, queryset):
+        """
+        Apply a custom filter to the queryset using an admin filter instance.
+        
+        If an admin filter instance is available, attempts to filter the queryset using the filter's method. 
+        Handles potential validation or value errors by returning the original queryset if filtering fails.
+        
+        Parameters:
+            request (HttpRequest): The current HTTP request object
+            queryset (QuerySet): The original Django queryset to be filtered
+        
+        Returns:
+            QuerySet: The filtered queryset if successful, otherwise the original queryset
+        """
         if hasattr(self, "admin_filter_instance"):
             try:
                 return self.admin_filter_instance.filter(queryset, self.get_python_value())
@@ -186,6 +199,16 @@ class BaseListFilter(admin.SimpleListFilter):
         return queryset
 
     def get_python_value(self):
+        """
+        Convert the filter value to its Python representation using the associated field's conversion method.
+        
+        Returns:
+            The Python-converted value of the current filter, using the field's `to_python` method.
+        
+        Notes:
+            - Useful for transforming form input to the appropriate Python type
+            - Relies on the `to_python` method of the field associated with the admin filter instance
+        """
         return self.admin_filter_instance.field.to_python(self.value())
 
     def __init_subclass__(cls, **kwargs):
