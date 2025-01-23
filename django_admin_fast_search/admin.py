@@ -322,9 +322,22 @@ class FastSearchFilterMixin:
         def lookups(self, request, model_admin):
             return ((self.parameter_name, self.parameter_name),)
 
+        def get_python_value(self):
+            if self.value() and self.admin_filter_instance.lookup_expr == "search":
+                search_value = re.sub(r'[+\-><\(\)~*\"@]+', ' ', self.value())
+
+                terms = search_value.strip().split(" ")
+                query = " ".join([f'+"{term}"' for term in terms if term])
+
+                return query
+            else:
+                return self.admin_filter_instance.field.to_python(self.value())
+
+
         methods = {
             "lookups": lookups,
             "template": "admin/custom_search_field.html",
+            "get_python_value": get_python_value,
         }
 
         return cls._get_filter_class(name, filter_instance, methods)
