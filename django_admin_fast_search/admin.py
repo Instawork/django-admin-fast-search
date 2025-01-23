@@ -18,6 +18,20 @@ import re
 
 logger = logging.getLogger("instawork.django_admin_fast_search.admin")
 
+def process_fulltext_search_value(value):
+    """
+    Process a search value by removing boolean search operators and formatting terms.
+    Operators are: +, -, > <, ( ), ~, *, ", @distance. Refer to https://stackoverflow.com/a/26537463
+
+    Args:
+        value (str): The raw search value
+    Returns:
+        str: Formatted query string for boolean search mode
+    """
+    search_value = re.sub(r'[+\-><\(\)~*\"@]+', ' ', value)
+    terms = search_value.strip().split(" ")
+    return " ".join([f'+"{term}"' for term in terms if term])
+
 class FastSearch(admin.ModelAdmin):
 
     show_full_result_count = False
@@ -148,16 +162,7 @@ def generic_filter_factory(filter_type):
 
         def queryset(self, request, queryset):
             if self.value():
-
-                # remove operators with special meaning in boolean search mode.
-                # Operators are: +, -, > <, ( ), ~, *, ", @distance
-                # refer https://stackoverflow.com/a/26537463
-
-                search_value = re.sub(r'[+\-><\(\)~*\"@]+', ' ', self.value())
-
-                terms = search_value.strip().split(" ")
-                query = " ".join([f'+"{term}"' for term in terms if term])
-                logger.info(f"Query: {query}")
+                query = process_fulltext_search_value(self.value())
 
                 kwargs = {f"{self.parameter_name}__search": f"{query}"}
                 return queryset.filter(**kwargs)
@@ -322,9 +327,17 @@ class FastSearchFilterMixin:
         def lookups(self, request, model_admin):
             return ((self.parameter_name, self.parameter_name),)
 
+        def get_python_value(self):
+            if self.value() and self.admin_filter_instance.lookup_expr == "search":
+                return process_fulltext_search_value(self.value())
+            else:
+                return self.admin_filter_instance.field.to_python(self.value())
+
+
         methods = {
             "lookups": lookups,
             "template": "admin/custom_search_field.html",
+            "get_python_value": get_python_value,
         }
 
         return cls._get_filter_class(name, filter_instance, methods)
